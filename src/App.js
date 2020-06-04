@@ -1,24 +1,69 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from 'react';
+import axios from 'axios';
+import Search from './components/Search';
+import Results from './components/Results';
+import Popup from './components/Popup';
 
 function App() {
+  const API_KEY = "be72f9ba";
+  const API_URL = `http://www.omdbapi.com/?apikey=${API_KEY}` 
+
+  const [state, setState] = useState({
+    s: "",
+    results: [],
+    selected: {}
+  });
+
+  const search = (e) => {
+    if (e.key === "Enter") {
+      axios(API_URL + "&s=" + state.s).then(({data}) => {
+        let results = data.Search;
+
+        setState(prevState => {
+          return {...prevState, results: results } 
+        })
+      });
+    }
+  }
+
+  const handleInput = (e) => {
+    let s = e.target.value;
+
+    setState(prevState => {
+      return { ...prevState, s: s}
+    });
+  }
+
+  const openPopup = id => {
+    axios(API_URL + "&i=" + id).then(({data}) => {
+      let result = data;
+
+      setState(prevState => {
+        return { ...prevState, selected: result }
+      });
+    });
+  }
+
+  const closePopup = () => {
+    setState(prevState => {
+      return { ...prevState, selected: {}}
+    });
+  }
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+      <header>
+        <h1>Movie Database</h1>
       </header>
+      <main>
+        <Search handleInput={handleInput} search={search}/>
+
+        {(typeof state.results !== "undefined") ? 
+          <Results results={state.results} openPopup={openPopup}/> : false}
+
+        {(typeof state.selected.Title != "undefined") ? 
+          <Popup selected={state.selected} closePopup={closePopup} /> : false}
+      </main>
     </div>
   );
 }
